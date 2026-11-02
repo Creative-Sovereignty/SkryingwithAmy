@@ -4,7 +4,17 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Target, SessionResult, UserImpressions, SelfRating, DifficultyTier, ViewingMethodInfo } from './types';
+import { 
+  Target, 
+  SessionResult, 
+  UserImpressions, 
+  SelfRating, 
+  DifficultyTier, 
+  ViewingMethodInfo,
+  UserProfile,
+  AppMembership,
+  ContainerMode
+} from './types';
 import { TARGET_POOL } from './data/targets';
 import { generateBlindCode, getRandomTarget, generateJudgeCandidates } from './utils/codeGenerator';
 import { calculateScore } from './utils/scoring';
@@ -13,7 +23,11 @@ import {
   saveSession, 
   updateSessionRating, 
   updateSessionJudge,
-  calculateStats 
+  calculateStats,
+  getUserProfile,
+  saveUserProfile,
+  getAppMembership,
+  activateAppMembership
 } from './utils/storage';
 import { Header, ActiveView } from './components/Header';
 import { ViewingPhase } from './components/ViewingPhase';
@@ -28,8 +42,13 @@ import { CircleSessions } from './components/CircleSessions';
 import { MalychiteBlog } from './components/MalychiteBlog';
 import { AmetiestGuide, AmetiestSessionContext } from './components/AmetiestGuide';
 import { soundEngine } from './utils/audioEngine';
+import { LandingWebsite } from './components/landing/LandingWebsite';
 
 export default function App() {
+  const [containerMode, setContainerMode] = useState<ContainerMode>('website');
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(() => getUserProfile());
+  const [membership, setMembership] = useState<AppMembership>(() => getAppMembership());
+
   const [activeView, setActiveView] = useState<ActiveView>('session');
   const [sessionPhase, setSessionPhase] = useState<'viewing' | 'revealed'>('viewing');
   const [selectedTier, setSelectedTier] = useState<DifficultyTier>(1);
@@ -186,6 +205,18 @@ export default function App() {
           freeText: liveDraftImpressions.freeText,
         };
 
+  if (containerMode === 'website') {
+    return (
+      <LandingWebsite
+        onLaunchApp={() => setContainerMode('app')}
+        userProfile={userProfile}
+        onUserProfileChange={(profile) => setUserProfile(profile)}
+        membership={membership}
+        onActivateMembership={() => setMembership(activateAppMembership(30))}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#080914] text-[#E0E2EC] cosmic-bg flex flex-col selection:bg-[#2DD4BF]/25 selection:text-[#F3E8FF]">
       {/* Top Bar Header adhering strictly to Top Bar Contract */}
@@ -203,6 +234,9 @@ export default function App() {
         isRadioPlaying={isRadioPlaying}
         streakCount={stats.dailyStreak}
         onOpenAmetiestModal={() => setIsAmetiestModalOpen(true)}
+        onReturnToWebsite={() => setContainerMode('website')}
+        userCodename={userProfile?.codename}
+        isMember={membership.isActive}
       />
 
       {/* Collapsible Meditation Ambient Radio Bar */}

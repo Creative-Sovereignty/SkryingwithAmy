@@ -32,6 +32,9 @@ interface HeaderProps {
   isRadioPlaying?: boolean;
   streakCount: number;
   onOpenAmetiestModal?: () => void;
+  onReturnToWebsite?: () => void;
+  userCodename?: string;
+  isMember?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -42,21 +45,51 @@ export const Header: React.FC<HeaderProps> = ({
   isRadioPlaying,
   streakCount,
   onOpenAmetiestModal,
+  onReturnToWebsite,
+  userCodename,
+  isMember,
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-[#080914]/90 backdrop-blur-md border-b border-[#242A5C]/60">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-6">
-        {/* Zone 1: Single wordmark with animated Teal & Pink Sparkle font */}
-        <button
-          type="button"
-          onClick={() => onSelectView('session')}
-          className="text-xl sm:text-2xl font-bold tracking-widest whitespace-nowrap shrink-0 font-display flex items-center gap-2 group hover:opacity-95 transition-opacity"
-        >
-          <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-[#2DD4BF] to-[#F472B6] shadow-[0_0_10px_#2DD4BF] animate-pulse" />
-          <span className="shimmer-teal-pink-text font-extrabold tracking-widest">
-            SCRY
-          </span>
-        </button>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4 sm:gap-6">
+        
+        {/* Zone 1: Return to Website + Wordmark with Sacred Eye Logo */}
+        <div className="flex items-center gap-3 shrink-0">
+          {onReturnToWebsite && (
+            <button
+              type="button"
+              onClick={onReturnToWebsite}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-slate-300 hover:text-white bg-slate-900/80 hover:bg-slate-800 border border-white/10 rounded-lg transition-colors whitespace-nowrap"
+              title="Return to Skry Overview & Manual"
+            >
+              <span>←</span>
+              <span className="hidden sm:inline">Overview & Manual</span>
+              <span className="sm:hidden">Exit</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => onSelectView('session')}
+            className="text-lg sm:text-xl font-bold tracking-widest whitespace-nowrap shrink-0 flex items-center gap-2 group hover:opacity-95 transition-opacity"
+          >
+            <div className="w-7 h-7 rounded-full overflow-hidden p-0.5 bg-gradient-to-tr from-amber-400 via-teal-400 to-purple-500 shadow-[0_0_10px_rgba(45,212,191,0.4)]">
+              <img
+                src="/assets/aistudio/60D8DF35-AA1F-4DB0-8999-72D37966F48B-IMG_STYLE_4b45c9a3.jpg"
+                alt="Skry Sacred Eye"
+                className="w-full h-full object-cover rounded-full"
+              />
+            </div>
+            <span className="shimmer-teal-pink-text font-extrabold tracking-widest font-serif">
+              SKRY
+            </span>
+            {isMember && (
+              <span className="hidden xl:inline-block px-2 py-0.5 text-[10px] uppercase tracking-wider font-mono text-amber-300 bg-amber-500/20 border border-amber-500/40 rounded-full">
+                Member
+              </span>
+            )}
+          </button>
+        </div>
 
         {/* Zone 2: Clean single-line text navigation links with Teal & Pink sparkle shimmer */}
         <nav className="hidden lg:flex items-center gap-5 text-sm font-medium">

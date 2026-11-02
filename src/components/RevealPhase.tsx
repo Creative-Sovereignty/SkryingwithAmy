@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SessionResult, SelfRating, Target } from '../types';
 import { 
   Check, 
@@ -15,6 +15,7 @@ import {
   Eye
 } from 'lucide-react';
 import { soundEngine } from '../utils/audioEngine';
+import { StarburstCelebration } from './StarburstCelebration';
 
 interface RevealPhaseProps {
   session: SessionResult;
@@ -39,13 +40,25 @@ export const RevealPhase: React.FC<RevealPhaseProps> = ({
   const [activeJudgeCandidate, setActiveJudgeCandidate] = useState<string | null>(
     session.judge?.selectedTargetId || null
   );
+  const [showStarburst, setShowStarburst] = useState<boolean>(false);
 
   const { target, impressions, score, code, method, judge } = session;
   const isJudged = Boolean(judge && judge.selectedTargetId);
+  const isHitRecorded = Boolean(judge?.isHit || (activeJudgeCandidate && activeJudgeCandidate === target.id));
+
+  // Trigger celebration starburst on mount if session already qualifies as a Hit or >= 80% score
+  useEffect(() => {
+    if (score.percentage >= 80 || (judge && judge.isHit === true)) {
+      setShowStarburst(true);
+    }
+  }, [score.percentage, judge]);
 
   const handleRatingSelect = (rating: SelfRating) => {
     setSelectedRating(rating);
     onUpdateSelfRating(rating, reflectionNotes);
+    if (rating === 'yes' && (score.percentage >= 60 || isHitRecorded)) {
+      setShowStarburst(true);
+    }
   };
 
   const handleNotesBlur = () => {
@@ -58,6 +71,16 @@ export const RevealPhase: React.FC<RevealPhaseProps> = ({
     setActiveJudgeCandidate(candidateId);
     onJudgeSelect(candidateId);
     soundEngine.playSingingBowlChime();
+    
+    // Positive reinforcement: trigger celestial starburst on correct blind match
+    if (candidateId === target.id) {
+      setShowStarburst(true);
+    }
+  };
+
+  const triggerManualCelebration = () => {
+    setShowStarburst(false);
+    setTimeout(() => setShowStarburst(true), 50);
   };
 
   const getVerdictStyle = (verdict: string) => {
@@ -73,7 +96,15 @@ export const RevealPhase: React.FC<RevealPhaseProps> = ({
   };
 
   return (
-    <div className="max-w-5xl mx-auto py-6 px-4 sm:px-6">
+    <div className="max-w-5xl mx-auto py-6 px-4 sm:px-6 relative">
+      {/* Subtle Starburst / Celestial Firework celebration for Hit or >=80% score */}
+      <StarburstCelebration
+        trigger={showStarburst}
+        scorePercentage={score.percentage}
+        isHit={isHitRecorded}
+        onComplete={() => setShowStarburst(false)}
+      />
+
       {/* Target Unveiling Header */}
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#141733] border border-[#242A5C] text-xs text-[#2DD4BF] mb-3">
@@ -208,9 +239,22 @@ export const RevealPhase: React.FC<RevealPhaseProps> = ({
             </div>
           </div>
 
-          <div className="text-right text-xs shrink-0 font-mono-code px-3 py-1.5 rounded-lg bg-[#080914] border border-[#242A5C]">
-            <span className="text-[#787EA8] mr-1">Chance Baseline:</span>
-            <span className="text-white font-bold">25.0%</span>
+          <div className="flex items-center gap-2.5 shrink-0">
+            {judge.isHit && (
+              <button
+                type="button"
+                onClick={triggerManualCelebration}
+                className="text-xs px-3 py-1.5 rounded-lg bg-emerald-900/60 hover:bg-emerald-850 border border-emerald-500/50 text-emerald-200 flex items-center gap-1.5 transition-all shadow hover:shadow-emerald-500/20 active:scale-95"
+                title="Replay Celebration Animation"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-emerald-300 animate-pulse" />
+                <span className="font-display uppercase tracking-wider font-semibold">Burst</span>
+              </button>
+            )}
+            <div className="text-right text-xs shrink-0 font-mono-code px-3 py-1.5 rounded-lg bg-[#080914] border border-[#242A5C]">
+              <span className="text-[#787EA8] mr-1">Chance Baseline:</span>
+              <span className="text-white font-bold">25.0%</span>
+            </div>
           </div>
         </div>
       )}
@@ -411,6 +455,17 @@ export const RevealPhase: React.FC<RevealPhaseProps> = ({
               <span className={`text-xs px-2.5 py-0.5 rounded-full border ${getVerdictStyle(score.verdict)}`}>
                 {score.verdict}
               </span>
+              {score.percentage >= 80 && (
+                <button
+                  type="button"
+                  onClick={triggerManualCelebration}
+                  className="text-xs px-2.5 py-0.5 rounded-full bg-[#182645] hover:bg-[#203159] border border-[#2DD4BF]/50 text-[#5EEAD4] flex items-center gap-1 transition-all active:scale-95"
+                  title="Replay starburst celebration"
+                >
+                  <Sparkles className="w-3 h-3 text-[#F472B6]" />
+                  <span className="font-display font-semibold uppercase tracking-wider text-[10px]">Burst</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

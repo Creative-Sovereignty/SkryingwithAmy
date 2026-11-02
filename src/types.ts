@@ -161,3 +161,24 @@ export interface AchievementBadge {
   rarity: AchievementRarity;
   rewardQuote?: string;
 }
+
+export interface UserProfile {
+  id: string;
+  codename: string;
+  email?: string;
+  clearanceTier: DifficultyTier;
+  isMember: boolean;
+  membershipExpiresAt?: string;
+  createdAt: string;
+}
+
+export interface AppMembership {
+  isActive: boolean;
+  expiresAt: string | null;
+  planName: string;
+  purchasedAt?: string;
+}
+
+export type ActiveWebPage = 'overview' | 'manual' | 'download';
+export type ContainerMode = 'website' | 'app';
+

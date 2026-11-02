@@ -241,3 +241,78 @@ export function importBackupJson(rawJson: string): { success: boolean; count?: n
     return { success: false, error: err.message || 'Failed to parse JSON' };
   }
 }
+
+const PROFILE_KEY = 'skry_user_profile_v1';
+const MEMBERSHIP_KEY = 'skry_app_membership_v1';
+
+export function getUserProfile(): import('../types').UserProfile | null {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+export function saveUserProfile(profile: import('../types').UserProfile): void {
+  try {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+  } catch (err) {
+    console.error('Failed to save profile', err);
+  }
+}
+
+export function clearUserProfile(): void {
+  try {
+    localStorage.removeItem(PROFILE_KEY);
+  } catch (err) {
+    console.error('Failed to clear profile', err);
+  }
+}
+
+export function getAppMembership(): import('../types').AppMembership {
+  try {
+    const raw = localStorage.getItem(MEMBERSHIP_KEY);
+    if (!raw) {
+      return { isActive: false, expiresAt: null, planName: 'Standard Explorer' };
+    }
+    const data = JSON.parse(raw);
+    if (data.expiresAt) {
+      const isStillValid = new Date(data.expiresAt).getTime() > Date.now();
+      return {
+        isActive: isStillValid,
+        expiresAt: data.expiresAt,
+        planName: isStillValid ? (data.planName || 'Adept Scholar') : 'Expired',
+        purchasedAt: data.purchasedAt,
+      };
+    }
+    return { isActive: false, expiresAt: null, planName: 'Standard Explorer' };
+  } catch {
+    return { isActive: false, expiresAt: null, planName: 'Standard Explorer' };
+  }
+}
+
+export function activateAppMembership(days = 30): import('../types').AppMembership {
+  const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+  const membership: import('../types').AppMembership = {
+    isActive: true,
+    expiresAt,
+    planName: 'Adept Scholar (1 Month)',
+    purchasedAt: new Date().toISOString(),
+  };
+  try {
+    localStorage.setItem(MEMBERSHIP_KEY, JSON.stringify(membership));
+    // Also upgrade active profile if exists
+    const profile = getUserProfile();
+    if (profile) {
+      profile.isMember = true;
+      profile.membershipExpiresAt = expiresAt;
+      saveUserProfile(profile);
+    }
+  } catch (err) {
+    console.error('Failed to persist membership', err);
+  }
+  return membership;
+}
+
